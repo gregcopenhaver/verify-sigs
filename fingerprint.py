@@ -31,7 +31,7 @@ import hashlib
 import os
 import struct
 import sys
-
+import binascii
 
 # pylint: disable-msg=C6409
 # Two classes given named tupes for ranges and relative ranges.
@@ -445,7 +445,7 @@ def FormatResults(file_obj, results):
           else:
             out += v.encode('hex') + ','
       else:
-        out += value.encode('hex')
+        out += binascii.b2a_hex(value).decode()
       out += '\n'
   return out
 
