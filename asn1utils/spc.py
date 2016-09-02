@@ -19,18 +19,18 @@
 """Authenticode-specific ASN.1 data structures."""
 
 
-from pkcs7 import DigestInfo
+from asn1utils.pkcs7 import DigestInfo
 from pyasn1.type import char
 from pyasn1.type import namedtype
 from pyasn1.type import tag
 from pyasn1.type import univ
-import x509
+from asn1utils.x509 import *
 
 
 class SpcAttributeTypeAndOptionalValue(univ.Sequence):
   componentType = namedtype.NamedTypes(
-      namedtype.NamedType('type', x509.AttributeType()),
-      namedtype.OptionalNamedType('value', x509.AttributeValue()))
+      namedtype.NamedType('type', AttributeType()),
+      namedtype.OptionalNamedType('value', AttributeValue()))
 
 
 class SpcIndirectDataContent(univ.Sequence):
