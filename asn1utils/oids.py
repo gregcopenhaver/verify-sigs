@@ -21,22 +21,22 @@
 import hashlib
 
 
-import pkcs7
-import spc
+from asn1utils.pkcs7 import *
+from asn1utils.spc import *
 
 # I want the formatting to make sense and be readable, really.
 # pylint: disable-msg=C6006,C6007
 OID_TO_CLASS = {
     (1,2,840,113549,1,7,1)   : 'PKCS#7 Data',
-    (1,2,840,113549,1,7,2)   : pkcs7.SignedData,
+    (1,2,840,113549,1,7,2)   : SignedData,
     (1,2,840,113549,2,5)     : hashlib.md5,
     (1,3,14,3,2,26)          : hashlib.sha1,
-    (1,3,6,1,4,1,311,2,1,4)  : spc.SpcIndirectDataContent,
-    (1,2,840,113549,1,9,3)   : pkcs7.ContentType,
-    (1,2,840,113549,1,9,4)   : pkcs7.DigestInfo,
-    (1,3,6,1,4,1,311,2,1,12) : spc.SpcSpOpusInfo,
-    (1,2,840,113549,1,9,6)   : pkcs7.CountersignInfo,  # 'RSA_counterSign'
-    (1,2,840,113549,1,9,5)   : pkcs7.SigningTime,
+    (1,3,6,1,4,1,311,2,1,4)  : SpcIndirectDataContent,
+    (1,2,840,113549,1,9,3)   : ContentType,
+    (1,2,840,113549,1,9,4)   : DigestInfo,
+    (1,3,6,1,4,1,311,2,1,12) : SpcSpOpusInfo,
+    (1,2,840,113549,1,9,6)   : CountersignInfo,  # 'RSA_counterSign'
+    (1,2,840,113549,1,9,5)   : SigningTime,
 }
 
 OID_TO_PUBKEY = {
