@@ -477,7 +477,7 @@ class AuthData(object):
             if auth_attr_hash != self.expected_auth_attrs_hash:
                 raise Asn1Error('3: Validation of countersignature hash failed.')
 
-    def ValidateCertChainsTest(self,timestamp):
+    def ExtractCertChains(self,timestamp):
         store = X509Store()
         for cert in self.certificates.values():
             cert_X509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM,
@@ -487,9 +487,6 @@ class AuthData(object):
             fw = open(cert_X509.digest('sha1').decode('UTF-8').replace(':', ''), 'wb')
             fw.write(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, cert_X509))
             fw.close()
-            store.add_cert(cert_X509)
-        #store_ctx = X509StoreContext(store, cert_X509)
-        #print(store_ctx.verify_certificate())
 
         pass
 
