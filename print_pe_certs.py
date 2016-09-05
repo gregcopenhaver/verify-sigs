@@ -35,7 +35,7 @@ import auth_data
 import fingerprint
 import pecoff_blob
 from asn1utils import dn
-
+import json
 
 # EVIL EVIL -- Monkeypatch to extend accessor
 # TODO(user): This was submitted to pyasn1. Remove when we have it back.
@@ -139,12 +139,13 @@ def main():
 
     print('Binary is signed with cert issued by:')
     pprint.pprint(auth.signing_cert_id)
-    map_result['signing_cert_id'] = auth.signing_cert_id
+
+    map_result['signing_cert_id'] = json.loads(auth.signing_cert_id[0].replace('\'','"'))
     print
 
     print('Cert chain head issued by:')
     pprint.pprint(auth.cert_chain_head[2])
-    map_result['CertChains']['head'] = auth.cert_chain_head[2]
+    map_result['CertChains']['head'] = json.loads(auth.cert_chain_head[2][0].replace('\'','"'))
     print('  Chain not before: %s UTC' %
           (time.asctime(time.gmtime(auth.cert_chain_head[0]))))
     map_result['CertChains']['Before'] = time.asctime(time.gmtime(auth.cert_chain_head[0]))
@@ -155,9 +156,9 @@ def main():
 
     if auth.has_countersignature:
         print('Countersig chain head issued by:')
-        map_result['CounterSignature']['Chain']={}
+        map_result['CounterSignature']['Chain'] = {}
         pprint.pprint(auth.counter_chain_head[2])
-        map_result['CounterSignature']['Chain']['head'] = auth.counter_chain_head[2]
+        map_result['CounterSignature']['Chain']['head'] = json.loads(auth.counter_chain_head[2][0].replace('\'','"'))
         print('  Countersig not before: %s UTC' %
               (time.asctime(time.gmtime(auth.counter_chain_head[0]))))
         map_result['CounterSignature']['Chain']['Before'] =time.asctime(time.gmtime(auth.counter_chain_head[0]))
@@ -170,13 +171,13 @@ def main():
     for (issuer, serial), cert in auth.certificates.items():
         print('  Issuer: %s' % issuer)
         print('  Serial: %s' % serial)
-        map_result['Certificates'][serial]={
-            'Issuer':  issuer
+        map_result['Certificates'][serial] ={
+            'Issuer':  json.loads(issuer.replace('\'','"'))
         }
         subject = cert[0][0]['subject']
         subject_dn = str(dn.DistinguishedName.TraverseRdn(subject[0]))
         print('  Subject: %s' % subject_dn)
-        map_result['Certificates'][serial]['Subject'] = subject_dn
+        map_result['Certificates'][serial]['Subject'] = json.loads(subject_dn.replace('\'', '"'))
         not_before = cert[0][0]['validity']['notBefore']
         not_after = cert[0][0]['validity']['notAfter']
         not_before_time = not_before.ToPythonEpochTime()
