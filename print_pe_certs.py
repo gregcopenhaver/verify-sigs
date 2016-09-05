@@ -55,7 +55,7 @@ del F, univ
 # EVIL EVIL
 
 
-def main():
+def extract_auth_data():
     data_file = sys.argv[1]
     map_result = {'pecoff hashes': {
 
@@ -200,6 +200,12 @@ def main():
         print('Signature Blob had trailing (unvalidated) data (%d bytes): %s' %
               (len(auth.trailing_data), binascii.hexlify(auth.trailing_data)))
 
-    print(map_result)
+    return map_result
+
+
+def main():
+    result_json = extract_auth_data()
+    print(json.dumps(result_json))
+
 if __name__ == '__main__':
     main()
