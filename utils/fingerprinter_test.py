@@ -24,7 +24,7 @@ import unittest as test
 
 import StringIO
 
-from utils import fingerprint
+import fingerprint
 
 
 class FingerprinterTest(test.TestCase):

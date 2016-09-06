@@ -27,7 +27,7 @@
 import os
 import pickle
 
-from utils import fingerprint
+import fingerprint
 
 
 def main():

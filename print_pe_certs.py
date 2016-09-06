@@ -31,11 +31,12 @@ import pprint
 import sys
 import time
 
-from utils import pecoff_blob
 from pyasn1.codec.der import encoder as der_encoder
 
+import fingerprint
 from asn1utils import dn
-from utils import fingerprint, auth_data
+from utils import auth_data
+from utils.pecoff_blob import PecoffBlob
 
 
 # EVIL EVIL -- Monkeypatch to extend accessor
@@ -112,7 +113,7 @@ def extract_auth_data():
     # TODO(user): Process all instances
     signed_data = signed_datas[0]
 
-    blob = pecoff_blob.PecoffBlob(signed_data)
+    blob = PecoffBlob(signed_data)
 
     auth = auth_data.AuthData(blob.getcertificateblob())
     content_hasher_name = auth.digest_algorithm().name
