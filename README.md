@@ -8,12 +8,12 @@ binaries.
 DEPENDENCIES
 ------------
 You need pyasn1 == 0.13b or >= pyasn1-0.1.4rc4
-and M2Crypto to parse and validate signatures.
+and Cryptography to parse and validate signatures.
 libssl-dev
 To exercise some demonstrator code, you may need pefile.
-M2Crypto: http://chandlerproject.org/Projects/MeTooCrypto/
+Cryptograpy: https://cryptography.io
 pyasn1: http://pyasn1.sourceforge.net/
-pefile: http://code.google.com/p/pefile/
+pefile: https://github.com/erocarrera/pefile
 
 
 DETAILS
