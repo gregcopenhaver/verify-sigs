@@ -54,5 +54,5 @@ class PecoffBlob(object):
     if self._wCertificateType != WIN_CERT_TYPE_PKCS_SIGNED_DATA:
       raise RuntimeError("Unknown cert type %#x." % self._wCertificateType)
 
-  def getCertificateBlob(self):
+  def getcertificateblob(self):
     return self._bCertificate

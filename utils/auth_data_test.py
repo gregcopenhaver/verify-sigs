@@ -21,12 +21,9 @@
 import os
 import pickle
 import time
-
-
 import unittest as test
 
-import auth_data
-import pecoff_blob
+from utils import pecoff_blob, auth_data
 
 
 # EVIL EVIL -- Monkeypatch to extend accessor
@@ -48,7 +45,7 @@ class AuthenticodeTest(test.TestCase):
     # with precomputed expected output.
     data_file = os.path.join('test_data', 'SoftwareUpdate.exe.res')
 
-    with file(data_file, 'rb') as resf:
+    with open(data_file, 'rb') as resf:
       exp_results = pickle.load(resf)
 
     # Make sure we have loaded the right data.
@@ -79,15 +76,15 @@ class AuthenticodeTest(test.TestCase):
 
     blob = pecoff_blob.PecoffBlob(signed_data)
 
-    auth = auth_data.AuthData(blob.getCertificateBlob())
+    auth = auth_data.AuthData(blob.getcertificateblob())
     content_hasher_name = auth.digest_algorithm().name
     computed_content_hash = signed_pecoff[content_hasher_name]
 
     try:
-      auth.ValidateAsn1()
-      auth.ValidateHashes(computed_content_hash)
-      auth.ValidateSignatures()
-      auth.ValidateCertChains(time.gmtime())
+      auth.validateasn1()
+      auth.validatehashes(computed_content_hash)
+      auth.validatesignatures()
+      auth.validatecertchains(time.gmtime())
     except auth_data.Asn1Error:
       if auth.openssl_error:
         print('OpenSSL Errors:\n%s' % auth.openssl_error)

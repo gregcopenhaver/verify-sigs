@@ -27,7 +27,7 @@
 import os
 import pickle
 
-import fingerprint
+from utils import fingerprint
 
 
 def main():
@@ -35,13 +35,13 @@ def main():
   files = os.listdir('.')
   for fnam in files:
     if not fnam.lower().endswith('.res'):
-      print 'Scanning %s' % fnam
-      with file(fnam, 'rb') as objf:
+      print('Scanning %s' % fnam)
+      with open(fnam, 'rb') as objf:
         fingerprinter = fingerprint.Fingerprinter(objf)
         fingerprinter.EvalPecoff()
         fingerprinter.EvalGeneric()
         results = fingerprinter.HashIt()
-        with file(fnam + '.res', 'wb') as resf:
+        with open(fnam + '.res', 'wb') as resf:
           pickle.dump(results, resf, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':

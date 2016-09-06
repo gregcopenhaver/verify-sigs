@@ -48,19 +48,20 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import padding
 
+
 class Asn1Error(Exception):
     pass
 
 
-def RequiresM2Crypto(fn):
+def requires_m2crypto(fn):
     """Decorator to support limited functionality if M2Crypto is missing."""
 
-    def M2CheckingWrapper(*args, **kwargs):
+    def m2checkingwrapper(*args, **kwargs):
         if not M2_X509:
             raise Asn1Error('%s requires M2Crypto, which is not available', fn)
         return fn(*args, **kwargs)
 
-    return M2CheckingWrapper
+    return m2checkingwrapper
 
 
 # This is meant to hold the ASN.1 data representing all pieces
@@ -119,16 +120,16 @@ class AuthData(object):
         # It used to contain information about the software publisher, but now
         # is set to default content, or under Vista+, may hold page hashes.
 
-        self.certificates = self._ParseCerts(self.signed_data['certificates'])
+        self.certificates = self._parsecerts(self.signed_data['certificates'])
 
         self.signer_info = self.signed_data['signerInfos'][0]
 
-        self.signing_cert_id = self._ParseIssuerInfo(
+        self.signing_cert_id = self._parseissuerinfo(
             self.signer_info['issuerAndSerialNumber'])
 
         # Parse out mandatory fields in authenticated attributes.
         self.auth_attrs, self.computed_auth_attrs_for_hash = (
-            self._ParseAuthAttrs(self.signer_info['authenticatedAttributes'],
+            self._parseauthattrs(self.signer_info['authenticatedAttributes'],
                                  required=[pkcs7.ContentType,
                                            pkcs7.DigestInfo,
                                            spc.SpcSpOpusInfo]))
@@ -139,7 +140,7 @@ class AuthData(object):
         self.expected_spc_info_hash = binascii.b2a_hex(hashval._value).decode()
 
         opus_info_asn1 = self.auth_attrs[spc.SpcSpOpusInfo][0]
-        self.program_name, self.program_url = self._ParseOpusInfo(opus_info_asn1)
+        self.program_name, self.program_url = self._parseopusinfo(opus_info_asn1)
 
         self.encrypted_digest = binascii.b2a_hex(self.signer_info['encryptedDigest']._value).decode()
 
@@ -149,13 +150,13 @@ class AuthData(object):
             return
 
         self.has_countersignature = True
-        self.counter_sig_info = self._ParseCountersig(unauth_attrs)
-        self.counter_sig_cert_id = self._ParseIssuerInfo(
+        self.counter_sig_info = self._parsecountersig(unauth_attrs)
+        self.counter_sig_cert_id = self._parseissuerinfo(
             self.counter_sig_info['issuerAndSerialNumber'])
 
         # Parse out mandatory fields in countersig authenticated attributes.
         self.counter_attrs, self.computed_counter_attrs_for_hash = (
-            self._ParseAuthAttrs(self.counter_sig_info['authenticatedAttributes'],
+            self._parseauthattrs(self.counter_sig_info['authenticatedAttributes'],
                                  required=[pkcs7.ContentType,
                                            pkcs7.SigningTime,
                                            pkcs7.DigestInfo]))
@@ -166,19 +167,21 @@ class AuthData(object):
             raise Asn1Error('Hash value expected to be OctetString.')
         self.expected_auth_attrs_hash = binascii.b2a_hex(hashval._value).decode()
 
-        self.counter_timestamp = self._ParseTimestamp(
+        self.counter_timestamp = self._parsetimestamp(
             self.counter_attrs[pkcs7.SigningTime][0])
 
         self.encrypted_counter_digest = binascii.b2a_hex(self.counter_sig_info['encryptedDigest']._value).decode()
 
-    def _ParseTimestamp(self, time_asn1):
+    @staticmethod
+    def _parsetimestamp(time_asn1):
         # Parses countersignature timestamp according to RFC3280, section 4.1.2.5+
         timestamp_choice, rest = decoder.decode(time_asn1,
                                                 asn1Spec=pkcs7.SigningTime())
         if rest: raise Asn1Error('Extra unparsed content.')
         return timestamp_choice.ToPythonEpochTime()
 
-    def _ParseIssuerInfo(self, issuer_and_serial):
+    @staticmethod
+    def _parseissuerinfo(issuer_and_serial):
         # Extract the information that identifies the certificate to be
         # used for verification on the encryptedDigest in signer_info
         # TODO(user): there is probably more validation to be done on these
@@ -186,9 +189,10 @@ class AuthData(object):
         issuer = issuer_and_serial['issuer']
         serial_number = int(issuer_and_serial['serialNumber'])
         issuer_dn = str(dn.DistinguishedName.TraverseRdn(issuer[0]))
-        return (issuer_dn, serial_number)
+        return issuer_dn, serial_number
 
-    def _ParseOpusInfo(self, opus_info_asn1):
+    @staticmethod
+    def _parseopusinfo(opus_info_asn1):
         spc_opus_info, rest = decoder.decode(opus_info_asn1,
                                              asn1Spec=spc.SpcSpOpusInfo())
         if rest: raise Asn1Error('Extra unparsed content.')
@@ -227,22 +231,24 @@ class AuthData(object):
 
         return program_name, more_info_link
 
-    def _ExtractIssuer(self, cert):
+    @staticmethod
+    def _extractissuer(cert):
         issuer = cert[0][0]['issuer']
         serial_number = int(cert[0][0]['serialNumber'])
         issuer_dn = str(dn.DistinguishedName.TraverseRdn(issuer[0]))
-        return (issuer_dn, serial_number)
+        return issuer_dn, serial_number
 
-    def _ParseCerts(self, certs):
+    def _parsecerts(self, certs):
         # TODO(user):
         # Parse them into a dict with serial, subject dn, issuer dn, lifetime,
         # algorithm, x509 version, extensions, ...
         res = dict()
         for cert in certs:
-            res[self._ExtractIssuer(cert)] = cert
+            res[self._extractissuer(cert)] = cert
         return res
 
-    def _ParseCountersig(self, unauth_attrs):
+    @staticmethod
+    def _parsecountersig(unauth_attrs):
         attr = unauth_attrs[0]
         if oids.OID_TO_CLASS.get(attr['type']) is not pkcs7.CountersignInfo:
             raise Asn1Error('Unexpected countersign OID.')
@@ -254,7 +260,8 @@ class AuthData(object):
         if rest: raise Asn1Error('Extra unparsed content.')
         return counter_sig_info
 
-    def _ParseAuthAttrs(self, auth_attrs, required):
+    @staticmethod
+    def _parseauthattrs(auth_attrs, required):
         results = dict.fromkeys(required)
         for attr in auth_attrs:
             if (attr['type'] in oids.OID_TO_CLASS and
@@ -281,7 +288,7 @@ class AuthData(object):
 
         return results, encoded_attrs
 
-    def _ValidateEmptyParams(self, params):
+    def _validateemptyparams(self, params):
         if params:
             param_value, rest = decoder.decode(params)
             if rest:
@@ -289,7 +296,7 @@ class AuthData(object):
             if param_value != univ.Null():
                 raise Asn1Error('Hasher has parameters. No idea what to do with them.')
 
-    def ValidateAsn1(self):
+    def validateasn1(self):
         """Validate overall information / consistency.
 
         Can be invoked to check through most of the assumptions on
@@ -321,7 +328,7 @@ class AuthData(object):
                     self.digest_algorithm is not hashlib.sha1):
             raise Asn1Error('digestAlgorithm must be md5 or sha1, was %s.' %
                             spec['algorithm'].prettyPrint())
-        self._ValidateEmptyParams(spec['parameters'])
+        self._validateemptyparams(spec['parameters'])
 
         # Validate SpcIndirectDataContent structure
         oid = self.signed_data['contentInfo']['contentType']
@@ -333,7 +340,7 @@ class AuthData(object):
         if oids.OID_TO_CLASS.get(oid) is not self.digest_algorithm:
             raise Asn1Error('Outer and SPC message_digest algorithms don\'t match.')
         params = self.spc_info['messageDigest']['digestAlgorithm']['parameters']
-        self._ValidateEmptyParams(params)
+        self._validateemptyparams(params)
 
         if self.signed_data['crls']:
             raise Asn1Error('Don\'t know what to do with CRL information.')
@@ -351,7 +358,7 @@ class AuthData(object):
         if oids.OID_TO_CLASS.get(oid) is not self.digest_algorithm:
             raise Asn1Error('Outer and signer_info digest algorithms don\'t match.')
         params = self.signer_info['digestAlgorithm']['parameters']
-        self._ValidateEmptyParams(params)
+        self._validateemptyparams(params)
 
         # Make sure the signing cert is actually in the list of certs
         if self.signing_cert_id not in self.certificates:
@@ -382,7 +389,7 @@ class AuthData(object):
         if enc_alg not in oids.OID_TO_PUBKEY:
             raise Asn1Error('Could not parse digestEncryptionAlgorithm.')
         params = self.signer_info['digestEncryptionAlgorithm']['parameters']
-        self._ValidateEmptyParams(params)
+        self._validateemptyparams(params)
 
         if not self.has_countersignature: return
 
@@ -401,7 +408,7 @@ class AuthData(object):
         if oids.OID_TO_CLASS.get(oid) is not self.digest_algorithm:
             raise Asn1Error('Outer and countersign digest algorithms don\'t match.')
         params = self.counter_sig_info['digestAlgorithm']['parameters']
-        self._ValidateEmptyParams(params)
+        self._validateemptyparams(params)
 
         # Make sure the counter-signing cert is actually in the list of certs
         if self.counter_sig_cert_id not in self.certificates:
@@ -433,9 +440,9 @@ class AuthData(object):
         if enc_alg not in oids.OID_TO_PUBKEY:
             raise Asn1Error('Could not parse CS digestEncryptionAlgorithm.')
         params = self.counter_sig_info['digestEncryptionAlgorithm']['parameters']
-        self._ValidateEmptyParams(params)
+        self._validateemptyparams(params)
 
-    def ValidateHashes(self, computed_content_hash):
+    def validatehashes(self, computed_content_hash):
         """Compares computed against expected hashes.
 
         This method makes sure the chain of hashes is correct. The chain
@@ -477,7 +484,7 @@ class AuthData(object):
             if auth_attr_hash != self.expected_auth_attrs_hash:
                 raise Asn1Error('3: Validation of countersignature hash failed.')
 
-    def ExtractCertChains(self,timestamp):
+    def extractcertchains(self, timestamp):
         store = X509Store()
         for cert in self.certificates.values():
             cert_X509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM,
@@ -490,22 +497,22 @@ class AuthData(object):
 
         pass
 
-    def ValidateCertChains(self, timestamp):  # pylint: disable-msg=W0613
+    def validatecertchains(self, timestamp):  # pylint: disable-msg=W0613
         # TODO(user):
         # Check ASN.1 on the certs
         # Check designated certificate use
         # Check extension consistency
         # Check wether timestamping is prohibited
-        not_before, not_after, top_cert = self._ValidateCertChain(
+        not_before, not_after, top_cert = self._validatecertchain(
             self.certificates[self.signing_cert_id])
         self.cert_chain_head = (not_before, not_after,
-                                self._ExtractIssuer(top_cert))
+                                self._extractissuer(top_cert))
 
         if self.has_countersignature:
-            cs_not_before, cs_not_after, cs_top_cert = self._ValidateCertChain(
+            cs_not_before, cs_not_after, cs_top_cert = self._validatecertchain(
                 self.certificates[self.counter_sig_cert_id])
             self.counter_chain_head = (cs_not_before, cs_not_after,
-                                       self._ExtractIssuer(cs_top_cert))
+                                       self._extractissuer(cs_top_cert))
             # Time of countersignature needs to be within validity of both chains
             if (not_before > self.counter_timestamp > not_after or
                             cs_not_before > self.counter_timestamp > cs_not_after):
@@ -516,7 +523,7 @@ class AuthData(object):
                 if not_before > timestamp > not_after:
                     raise Asn1Error('Cert chain not valid at time timestamp.')
 
-    def _ValidateCertChain(self, signee):
+    def _validatecertchain(self, signee):
         # Get start of 'regular' chain
         not_before = signee[0][0]['validity']['notBefore'].ToPythonEpochTime()
         not_after = signee[0][0]['validity']['notAfter'].ToPythonEpochTime()
@@ -532,7 +539,7 @@ class AuthData(object):
             # Are we at the end of the chain?
             if not signer:
                 break
-            self.ValidateCertificateSignature(signee, signer)
+            self.validatecertificatesignature(signee, signer)
             # Did we hit a self-signed certificate?
             if signee == signer:
                 break
@@ -547,7 +554,7 @@ class AuthData(object):
             signee = signer
         return not_before, not_after, signee
 
-    def _ValidatePubkeyGeneric(self, signing_cert, digest_alg, payload,
+    def _validatepubkeygeneric(self, signing_cert, digest_alg, payload,
                                enc_digest):
         m2_cert = M2_X509.load_cert_der_string(der_encoder.encode(signing_cert))
         pubkey = m2_cert.get_pubkey()
@@ -574,7 +581,7 @@ class AuthData(object):
         return v
 
 
-    def ValidateCertificateSignature(self, signed_cert, signing_cert):
+    def validatecertificatesignature(self, signed_cert, signing_cert):
         """Given a cert signed by another cert, validates the signature."""
         # First the naive way -- note this does not check expiry / use etc.
 
@@ -596,14 +603,8 @@ class AuthData(object):
         except:
             raise Asn1Error('1: Validation of cert signature failed.')
 
-
-
-    def ValidateCertificateSignatureOpenSSL(self, signed_cert, signing_cert):
-
-        pass
-
-    def _ValidPubKeyOpenSSL(self, signing_cert, digest_alg, payload,
-                               enc_digest):
+    def _validpubKeyopenssl(self, signing_cert, digest_alg, payload,
+                            enc_digest):
         cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1,
                                                der_encoder.encode(signing_cert))
 
@@ -615,7 +616,7 @@ class AuthData(object):
             print("Signature verification failed: {}".format(e))
             raise Asn1Error('1: Validation of cert signature failed.')
 
-    def ValidateSignatures(self):
+    def validatesignatures(self):
         """Validate encrypted hashes with respective public keys.
 
         Invokes necessary public key operations to check that signatures
@@ -627,16 +628,16 @@ class AuthData(object):
         """
         # Encrypted digest is that of auth_attrs, see comments in ValidateHashes.
         signing_cert = self.certificates[self.signing_cert_id]
-        v = self._ValidPubKeyOpenSSL(signing_cert, self.digest_algorithm, self.computed_auth_attrs_for_hash,self.encrypted_digest)
+        v = self._validpubKeyopenssl(signing_cert, self.digest_algorithm, self.computed_auth_attrs_for_hash, self.encrypted_digest)
 
         if v != 1:
             raise Asn1Error('1: Validation of basic signature failed.')
 
         if self.has_countersignature:
             signing_cert = self.certificates[self.counter_sig_cert_id]
-            v = self._ValidPubKeyOpenSSL(signing_cert, self.digest_algorithm,
-                                            self.computed_counter_attrs_for_hash,
-                                            self.encrypted_counter_digest)
+            v = self._validpubKeyopenssl(signing_cert, self.digest_algorithm,
+                                         self.computed_counter_attrs_for_hash,
+                                         self.encrypted_counter_digest)
 
             if v != 1:
                 raise Asn1Error('2: Validation of counterSignature failed.')

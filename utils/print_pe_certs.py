@@ -24,18 +24,19 @@
 # I really want to use parens in print statements.
 # pylint: disable-msg=C6003
 
+import binascii
 import hashlib
+import json
 import pprint
 import sys
 import time
-import binascii
+
+from utils import pecoff_blob
 from pyasn1.codec.der import encoder as der_encoder
 
-import auth_data
-import fingerprint
-import pecoff_blob
 from asn1utils import dn
-import json
+from utils import fingerprint, auth_data
+
 
 # EVIL EVIL -- Monkeypatch to extend accessor
 # TODO(user): This was submitted to pyasn1. Remove when we have it back.
@@ -113,15 +114,15 @@ def extract_auth_data():
 
     blob = pecoff_blob.PecoffBlob(signed_data)
 
-    auth = auth_data.AuthData(blob.getCertificateBlob())
+    auth = auth_data.AuthData(blob.getcertificateblob())
     content_hasher_name = auth.digest_algorithm().name
     computed_content_hash = signed_pecoff[content_hasher_name]
 
     try:
-        auth.ValidateAsn1()
-        auth.ValidateHashes(computed_content_hash)
-        auth.ValidateSignatures()
-        auth.ValidateCertChains(time.gmtime())
+        auth.validateasn1()
+        auth.validatehashes(computed_content_hash)
+        auth.validatesignatures()
+        auth.validatecertchains(time.gmtime())
     except auth_data.Asn1Error:
         if auth.openssl_error:
             print('OpenSSL Errors:\n%s' % auth.openssl_error)
@@ -140,12 +141,12 @@ def extract_auth_data():
     print('Binary is signed with cert issued by:')
     pprint.pprint(auth.signing_cert_id)
 
-    map_result['signing_cert_id'] = json.loads(auth.signing_cert_id[0].replace('\'','"'))
+    map_result['signing_cert_id'] = json.loads(auth.signing_cert_id[0].replace('\'', '"'))
     print
 
     print('Cert chain head issued by:')
     pprint.pprint(auth.cert_chain_head[2])
-    map_result['CertChains']['head'] = json.loads(auth.cert_chain_head[2][0].replace('\'','"'))
+    map_result['CertChains']['head'] = json.loads(auth.cert_chain_head[2][0].replace('\'', '"'))
     print('  Chain not before: %s UTC' %
           (time.asctime(time.gmtime(auth.cert_chain_head[0]))))
     map_result['CertChains']['Before'] = time.asctime(time.gmtime(auth.cert_chain_head[0]))
@@ -161,7 +162,7 @@ def extract_auth_data():
         map_result['CounterSignature']['Chain']['head'] = json.loads(auth.counter_chain_head[2][0].replace('\'','"'))
         print('  Countersig not before: %s UTC' %
               (time.asctime(time.gmtime(auth.counter_chain_head[0]))))
-        map_result['CounterSignature']['Chain']['Before'] =time.asctime(time.gmtime(auth.counter_chain_head[0]))
+        map_result['CounterSignature']['Chain']['Before'] = time.asctime(time.gmtime(auth.counter_chain_head[0]))
         print('  Countersig not after: %s UTC' %
               (time.asctime(time.gmtime(auth.counter_chain_head[1]))))
         map_result['CounterSignature']['Chain']['After'] = time.asctime(time.gmtime(auth.counter_chain_head[1]))
@@ -171,8 +172,8 @@ def extract_auth_data():
     for (issuer, serial), cert in auth.certificates.items():
         print('  Issuer: %s' % issuer)
         print('  Serial: %s' % serial)
-        map_result['Certificates'][serial] ={
-            'Issuer':  json.loads(issuer.replace('\'','"'))
+        map_result['Certificates'][serial] = {
+            'Issuer':  json.loads(issuer.replace('\'', '"'))
         }
         subject = cert[0][0]['subject']
         subject_dn = str(dn.DistinguishedName.TraverseRdn(subject[0]))
@@ -185,7 +186,7 @@ def extract_auth_data():
         print('  Not Before: %s UTC (%s)' %
               (time.asctime(time.gmtime(not_before_time)), not_before[0]))
 
-        map_result['Certificates'][serial]['Before']=time.asctime(time.gmtime(not_before_time))
+        map_result['Certificates'][serial]['Before'] = time.asctime(time.gmtime(not_before_time))
         print('  Not After: %s UTC (%s)' %
               (time.asctime(time.gmtime(not_after_time)), not_after[0]))
         map_result['Certificates'][serial]['After'] = time.asctime(time.gmtime(not_after_time))
