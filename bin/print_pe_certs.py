@@ -1,7 +1,3 @@
-from utils.extract_data import extract_auth_data
-import json
-import sys
-from _io import BytesIO
 #!/usr/bin/env python
 
 # Copyright 2011 Google Inc. All Rights Reserved.
@@ -28,9 +24,12 @@ from _io import BytesIO
 # I really want to use parens in print statements.
 # pylint: disable-msg=C6003
 
+from verifysigs.utils import extract_auth_data
+import json
+import sys
+from _io import BytesIO
 
 if __name__ == '__main__':
     file_obj = open(sys.argv[1], 'rb').read()
     result_json = extract_auth_data(BytesIO(file_obj))
     print(json.dumps(result_json))
-

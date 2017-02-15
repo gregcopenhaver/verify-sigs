@@ -21,8 +21,8 @@
 import hashlib
 
 
-from asn1utils.pkcs7 import *
-from asn1utils.spc import *
+from .pkcs7 import *
+from .spc import *
 
 # I want the formatting to make sense and be readable, really.
 # pylint: disable-msg=C6006,C6007

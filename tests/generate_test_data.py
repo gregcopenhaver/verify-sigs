@@ -27,11 +27,11 @@
 import os
 import pickle
 
-import fingerprint
+from verifysigs.utils import fingerprint
 
 
 def main():
-  os.chdir('test_data')
+  os.chdir('data')
   files = os.listdir('.')
   for fnam in files:
     if not fnam.lower().endswith('.res'):

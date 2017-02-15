@@ -22,16 +22,16 @@ import os
 import pickle
 import unittest as test
 
-import StringIO
+from io import StringIO
 
-import fingerprint
+from verifysigs.utils import fingerprint
 
 
 class FingerprinterTest(test.TestCase):
     def testRunTestData(self):
         # Walk through all data files in the test_data folder, and compare output
         # with precomputed expected output.
-        data_dir = os.path.join("test_data")
+        data_dir = os.path.join("data")
         files = os.listdir(data_dir)
         for fnam in files:
             if not fnam.lower().endswith(".res"):
@@ -51,18 +51,18 @@ class FingerprinterTest(test.TestCase):
 
     def testReasonableInterval(self):
         # Check if the limit on maximum blocksize for processing still holds.
-        dummy = StringIO.StringIO("")
+        dummy = StringIO("")
         fp = fingerprint.Fingerprinter(dummy)
         big_finger = fingerprint.Finger(None,
                                         [fingerprint.Range(0, 1000001)],
                                         None)
         fp.fingers.append(big_finger)
         start, stop = fp._GetNextInterval()
-        self.assertEquals(0, start)
-        self.assertEquals(1000000, stop)
+        self.assertEqual(0, start)
+        self.assertEqual(1000000, stop)
 
     def testAdjustments(self):
-        dummy = StringIO.StringIO("")
+        dummy = StringIO("")
         fp = fingerprint.Fingerprinter(dummy)
         big_finger = fingerprint.Finger(None,
                                         [fingerprint.Range(10, 20)],
@@ -71,19 +71,19 @@ class FingerprinterTest(test.TestCase):
 
         # The remaining range should not yet be touched...
         fp._AdjustIntervals(9, 10)
-        self.assertEquals([fingerprint.Range(10, 20)], fp.fingers[0].ranges)
+        self.assertEqual([fingerprint.Range(10, 20)], fp.fingers[0].ranges)
         # Trying to consume into the range. Blow up.
         self.assertRaises(RuntimeError, fp._AdjustIntervals, 9, 11)
         # We forgot a byte. Blow up.
         self.assertRaises(RuntimeError, fp._AdjustIntervals, 11, 12)
         # Consume a byte
         fp._AdjustIntervals(10, 11)
-        self.assertEquals([fingerprint.Range(11, 20)], fp.fingers[0].ranges)
+        self.assertEqual([fingerprint.Range(11, 20)], fp.fingers[0].ranges)
         # Consumed too much. Blow up.
         self.assertRaises(RuntimeError, fp._AdjustIntervals, 11, 21)
         # Consume exactly.
         fp._AdjustIntervals(11, 20)
-        self.assertEquals(0, len(fp.fingers[0].ranges))
+        self.assertEqual(0, len(fp.fingers[0].ranges))
 
     class MockHasher(object):
         def __init__(self):
@@ -95,7 +95,7 @@ class FingerprinterTest(test.TestCase):
     def testHashBlock(self):
         # Does it invoke a hash function?
         dummy = "12345"
-        fp = fingerprint.Fingerprinter(StringIO.StringIO(dummy))
+        fp = fingerprint.Fingerprinter(StringIO(dummy))
         big_finger = fingerprint.Finger(None,
                                         [fingerprint.Range(0, len(dummy))],
                                         None)
@@ -104,7 +104,7 @@ class FingerprinterTest(test.TestCase):
         fp.fingers.append(big_finger)
         # Let's process the block
         fp._HashBlock(dummy, 0, len(dummy))
-        self.assertEquals(hasher.seen, dummy)
+        self.assertEqual(hasher.seen, dummy)
 
         # TODO(user): Add more tests for the carry-over of HashIt,
         # the pecoff parsing pieces, and the parser / collector of the SignedData

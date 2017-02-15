@@ -465,20 +465,3 @@ def FindPehash(results):
             print('Found matching %s hash in SignedData.' % hashes)
             return
     print('PE File with signature data, NO hash matches.')
-
-
-def main(filenames):
-    for filename in filenames:
-        print('Scanning %s' % filename)
-        with open(filename, 'rb') as file_obj:
-            fingerprinter = Fingerprinter(file_obj)
-            is_pecoff = fingerprinter.EvalPecoff()
-            fingerprinter.EvalGeneric()
-            results = fingerprinter.HashIt()
-            print(FormatResults(file_obj, results))
-            if is_pecoff:
-                FindPehash(results)
-
-
-if __name__ == '__main__':
-    main(sys.argv[1:])

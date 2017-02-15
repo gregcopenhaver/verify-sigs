@@ -19,12 +19,12 @@
 """Authenticode-specific ASN.1 data structures."""
 
 
-from asn1utils.pkcs7 import DigestInfo
+from .pkcs7 import DigestInfo
 from pyasn1.type import char
 from pyasn1.type import namedtype
 from pyasn1.type import tag
 from pyasn1.type import univ
-from asn1utils.x509 import *
+from .x509 import *
 
 
 class SpcAttributeTypeAndOptionalValue(univ.Sequence):
