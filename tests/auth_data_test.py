@@ -23,7 +23,7 @@ import pickle
 import time
 import unittest as test
 
-from utils import pecoff_blob, auth_data
+from verifysigs.utils import pecoff_blob, auth_data
 
 
 # EVIL EVIL -- Monkeypatch to extend accessor
@@ -43,35 +43,35 @@ class AuthenticodeTest(test.TestCase):
   def testRunTestData(self):
     # Walk through one data file in the test_data folder, and compare output
     # with precomputed expected output.
-    data_file = os.path.join('test_data', 'SoftwareUpdate.exe.res')
+    data_file = os.path.join('data', 'SoftwareUpdate.exe.res')
 
     with open(data_file, 'rb') as resf:
       exp_results = pickle.load(resf)
 
     # Make sure we have loaded the right data.
-    expected_generic_sha1 = '8322f1c2c355d88432f1f03a1f231f63912186bd'
+    expected_generic_sha1 = b'\x83\x22\xf1\xc2\xc3\x55\xd8\x84\x32\xf1\xf0\x3a\x1f\x23\x1f\x63\x91\x21\x86\xbd'
     loaded_generic_hashes = [x for x in exp_results if x['name'] == 'generic']
-    loaded_generic_sha1 = loaded_generic_hashes[0]['sha1'].encode('hex')
-    self.assertEquals(expected_generic_sha1, loaded_generic_sha1)
+    loaded_generic_sha1 = loaded_generic_hashes[0]['sha1']
+    self.assertEqual(expected_generic_sha1, loaded_generic_sha1)
 
     signed_pecoffs = [x for x in exp_results if x['name'] == 'pecoff' and
                       'SignedData' in x]
     # If the invoker of the fingerprinter specified multiple fingers for pecoff
     # hashing (possible, even if not sensible), then there can be more than one
     # entry in this list. Should not be the case for this sample.
-    self.assertEquals(len(signed_pecoffs), 1)
+    self.assertEqual(len(signed_pecoffs), 1)
     signed_pecoff = signed_pecoffs[0]
 
     # Make sure PE/COFF hashes match as well. Again, just a sanity check.
-    expected_auth_sha1 = '978b90ace99c764841d2dd17d278fac4149962a3'
-    loaded_auth_sha1 = signed_pecoff['sha1'].encode('hex')
-    self.assertEquals(expected_auth_sha1, loaded_auth_sha1)
+    expected_auth_sha1 = b'\x97\x8b\x90\xac\xe9\x9c\x76\x48\x41\xd2\xdd\x17\xd2\x78\xfa\xc4\x14\x99\x62\xa3'
+    loaded_auth_sha1 = signed_pecoff['sha1']
+    self.assertEqual(expected_auth_sha1, loaded_auth_sha1)
 
     signed_datas = signed_pecoff['SignedData']
     # There may be multiple of these, if the windows binary was signed multiple
     # times, e.g. by different entities. Each of them adds a complete SignedData
     # blob to the binary. For our sample, there is only one blob.
-    self.assertEquals(len(signed_datas), 1)
+    self.assertEqual(len(signed_datas), 1)
     signed_data = signed_datas[0]
 
     blob = pecoff_blob.PecoffBlob(signed_data)
@@ -94,7 +94,7 @@ class AuthenticodeTest(test.TestCase):
     print('countersig: %d' % auth.has_countersignature)
     print('Timestamp: %s' % auth.counter_timestamp)
 
-    self.assertEquals(auth.trailing_data.encode('hex'), '00')
+    self.assertEqual(auth.trailing_data, b'\x00')
 
 
 def main():

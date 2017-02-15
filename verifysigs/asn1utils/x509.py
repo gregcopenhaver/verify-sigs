@@ -25,7 +25,7 @@ from pyasn1.type import namedval
 from pyasn1.type import tag
 from pyasn1.type import univ
 
-from asn1utils.x509_time import Time
+from .x509_time import Time
 
 
 class AttributeValue(univ.Any):

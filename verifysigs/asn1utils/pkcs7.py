@@ -22,8 +22,8 @@
 from pyasn1.type import namedtype
 from pyasn1.type import tag
 from pyasn1.type import univ
-from asn1utils.x509 import *
-from asn1utils.x509_time import Time
+from .x509 import *
+from .x509_time import Time
 
 
 class Attribute(univ.Sequence):

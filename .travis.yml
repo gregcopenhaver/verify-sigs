@@ -1,0 +1,23 @@
+language: python
+
+cache: pip
+
+python:
+    - 3.4
+    - 3.5
+    - "3.5-dev"
+    - 3.6
+    - "3.6-dev"
+    - "3.7-dev"
+    - "nightly"
+install:
+    - pip install -U pip
+    - pip install .
+
+script:
+    - pushd tests
+    - ./generate_test_data.py
+    - ./fingerprinter_test.py
+    - ./time_test.py
+    - ./auth_data_test.py
+    - popd

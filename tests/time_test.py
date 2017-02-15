@@ -25,7 +25,7 @@ from pyasn1.type import useful
 
 import unittest as test
 
-from x509_time import Time
+from verifysigs.asn1utils.x509_time import Time
 
 
 class TimeTest(test.TestCase):
@@ -35,7 +35,7 @@ class TimeTest(test.TestCase):
     t = Time()
     t.setComponentByName('utcTime', utctime)
     t_str = time.asctime(time.gmtime(t.ToPythonEpochTime()))
-    self.assertEquals(t_str, 'Thu Jun 14 23:59:59 2012')
+    self.assertEqual(t_str, 'Thu Jun 14 23:59:59 2012')
 
 
 def main():

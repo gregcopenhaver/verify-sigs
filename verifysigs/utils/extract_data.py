@@ -6,10 +6,10 @@ import sys
 import time
 from pyasn1.codec.der import encoder as der_encoder
 
-import fingerprint
-from asn1utils import dn
-from utils import auth_data
-from utils.pecoff_blob import PecoffBlob
+from . import fingerprint
+from verifysigs.asn1utils import dn
+from . import auth_data
+from .pecoff_blob import PecoffBlob
 
 
 # EVIL EVIL -- Monkeypatch to extend accessor

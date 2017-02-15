@@ -11,15 +11,13 @@ import release
 # +----------------------------------------------------------------------------
 # | Definition of the scripts
 # +----------------------------------------------------------------------------
-scripts = [
-    "fingerprint.py","print_pe_certs.py"
-]
+scripts = ["bin/fingerprint.py", "bin/print_pe_certs.py"]
 
 
 # +----------------------------------------------------------------------------
 # | Definition of the dependencies
 # +----------------------------------------------------------------------------
-dependencies = []
+dependencies = ['pyasn1', 'pyopenssl']
 
 extra_dependencies = {}
 
@@ -40,7 +38,7 @@ README = open('README.md', 'rt').read()
 # +----------------------------------------------------------------------------
 setup(
     name=release.name,
-    packages=['asn1utils', 'utils'],
+    packages=['verifysigs', 'verifysigs.utils', 'verifysigs.asn1utils'],
     scripts=scripts,
     install_requires=dependencies,
     extras_require=extra_dependencies,
