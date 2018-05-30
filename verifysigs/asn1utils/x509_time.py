@@ -39,8 +39,8 @@ class Time(univ.Choice):
 
   def ToPythonEpochTime(self):
     """Takes a ASN.1 Time choice, and returns seconds since epoch in UTC."""
-    utc_time = self.getComponentByName('utcTime')
-    general_time = self.getComponentByName('generalTime')
+    utc_time = self.getComponentByName('utcTime', default=None, instantiate=False)
+    general_time = self.getComponentByName('generalTime', default=None, instantiate=False)
     if utc_time and general_time:
       raise error.PyAsn1Error('Both elements of a choice are present.')
     if general_time:
