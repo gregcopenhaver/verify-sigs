@@ -39,6 +39,8 @@ class Time(univ.Choice):
 
   def ToPythonEpochTime(self):
     """Takes a ASN.1 Time choice, and returns seconds since epoch in UTC."""
+    # For some reason, if you don't pass default=None, instantiate=False, then it seems
+    # that the parent ASN.1 object gets destroyed
     utc_time = self.getComponentByName('utcTime', default=None, instantiate=False)
     general_time = self.getComponentByName('generalTime', default=None, instantiate=False)
     if utc_time and general_time:
