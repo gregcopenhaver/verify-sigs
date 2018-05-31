@@ -289,7 +289,7 @@ class AuthData(object):
         return results, encoded_attrs
 
     def _validateemptyparams(self, params):
-        if params:
+        if params.isValue:
             param_value, rest = decoder.decode(params)
             if rest:
                 raise Asn1Error('Extra unparsed content.')
