@@ -51,7 +51,7 @@ class FingerprinterTest(test.TestCase):
 
     def testReasonableInterval(self):
         # Check if the limit on maximum blocksize for processing still holds.
-        dummy = StringIO("")
+        dummy = StringIO(u"")
         fp = fingerprint.Fingerprinter(dummy)
         big_finger = fingerprint.Finger(None,
                                         [fingerprint.Range(0, 1000001)],
@@ -62,7 +62,7 @@ class FingerprinterTest(test.TestCase):
         self.assertEqual(1000000, stop)
 
     def testAdjustments(self):
-        dummy = StringIO("")
+        dummy = StringIO(u"")
         fp = fingerprint.Fingerprinter(dummy)
         big_finger = fingerprint.Finger(None,
                                         [fingerprint.Range(10, 20)],
@@ -94,7 +94,7 @@ class FingerprinterTest(test.TestCase):
 
     def testHashBlock(self):
         # Does it invoke a hash function?
-        dummy = "12345"
+        dummy = u"12345"
         fp = fingerprint.Fingerprinter(StringIO(dummy))
         big_finger = fingerprint.Finger(None,
                                         [fingerprint.Range(0, len(dummy))],

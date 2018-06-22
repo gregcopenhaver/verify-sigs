@@ -145,7 +145,7 @@ class AuthData(object):
         self.encrypted_digest = binascii.b2a_hex(self.signer_info['encryptedDigest']._value).decode()
 
         unauth_attrs = self.signer_info['unauthenticatedAttributes']
-        if unauth_attrs is None:
+        if unauth_attrs is None or len(unauth_attrs) == 0:
             self.has_countersignature = False
             return
 
@@ -203,7 +203,7 @@ class AuthData(object):
             opus_prog_name = spc_opus_info['programName']
             uni_name = opus_prog_name['unicode']
             ascii_name = opus_prog_name['ascii']
-            if ascii_name and uni_name:
+            if ascii_name is not None and ascii_name.isValue and uni_name is not None and uni_name.isValue:
                 # WTF? This is supposed to be a CHOICE
                 raise Asn1Error('Both elements of a choice are present.')
             elif uni_name:
@@ -250,15 +250,16 @@ class AuthData(object):
     @staticmethod
     def _parsecountersig(unauth_attrs):
         attr = unauth_attrs[0]
-        if oids.OID_TO_CLASS.get(attr['type']) is not pkcs7.CountersignInfo:
-            raise Asn1Error('Unexpected countersign OID.')
-        values = attr['values']
-        if len(values) != 1:
-            raise Asn1Error('Expected one CS value, got %d.' % len(values))
-        counter_sig_info, rest = decoder.decode(values[0],
-                                                asn1Spec=pkcs7.CountersignInfo())
-        if rest: raise Asn1Error('Extra unparsed content.')
-        return counter_sig_info
+        if attr.isValue:
+            if oids.OID_TO_CLASS.get(attr['type']) is not pkcs7.CountersignInfo:
+                raise Asn1Error('Unexpected countersign OID.')
+            values = attr['values']
+            if len(values) != 1:
+                raise Asn1Error('Expected one CS value, got %d.' % len(values))
+            counter_sig_info, rest = decoder.decode(values[0],
+                                                    asn1Spec=pkcs7.CountersignInfo())
+            if rest: raise Asn1Error('Extra unparsed content.')
+            return counter_sig_info
 
     @staticmethod
     def _parseauthattrs(auth_attrs, required):
@@ -289,11 +290,11 @@ class AuthData(object):
         return results, encoded_attrs
 
     def _validateemptyparams(self, params):
-        if params:
+        if params.isValue:
             param_value, rest = decoder.decode(params)
             if rest:
                 raise Asn1Error('Extra unparsed content.')
-            if param_value != univ.Null():
+            if not param_value.isSameTypeWith(univ.Null()):
                 raise Asn1Error('Hasher has parameters. No idea what to do with them.')
 
     def validateasn1(self):
@@ -342,7 +343,7 @@ class AuthData(object):
         params = self.spc_info['messageDigest']['digestAlgorithm']['parameters']
         self._validateemptyparams(params)
 
-        if self.signed_data['crls']:
+        if self.signed_data['crls'].isValue:
             raise Asn1Error('Don\'t know what to do with CRL information.')
 
         # Work through signer_info pieces that are easily validated
@@ -503,6 +504,7 @@ class AuthData(object):
         # Check designated certificate use
         # Check extension consistency
         # Check wether timestamping is prohibited
+        sc = self.certificates[self.signing_cert_id]
         not_before, not_after, top_cert = self._validatecertchain(
             self.certificates[self.signing_cert_id])
         self.cert_chain_head = (not_before, not_after,
@@ -527,6 +529,7 @@ class AuthData(object):
         # Get start of 'regular' chain
         not_before = signee[0][0]['validity']['notBefore'].ToPythonEpochTime()
         not_after = signee[0][0]['validity']['notAfter'].ToPythonEpochTime()
+
         while True:
             issuer = signee[0][0]['issuer']
             issuer_dn = str(dn.DistinguishedName.TraverseRdn(issuer[0]))
@@ -585,23 +588,31 @@ class AuthData(object):
         """Given a cert signed by another cert, validates the signature."""
         # First the naive way -- note this does not check expiry / use etc.
 
-
-
         cert_signing = x509.load_pem_x509_certificate(ssl.DER_cert_to_PEM_cert(der_encoder.encode(signing_cert)).encode(), default_backend())
 
         public_key = cert_signing.public_key()
 
-        cert_signed = x509.load_pem_x509_certificate(ssl.DER_cert_to_PEM_cert(der_encoder.encode(signed_cert)).encode(), default_backend())
+        der_cert = der_encoder.encode(signed_cert)
+        cert_signed = x509.load_pem_x509_certificate(ssl.DER_cert_to_PEM_cert(der_cert).encode(), default_backend())
 
         data = cert_signed.tbs_certificate_bytes
         signature = cert_signed.signature
 
-        verifier = public_key.verifier(signature, padding.PKCS1v15(), cert_signed.signature_hash_algorithm)
-        try:
-            verifier.update(data)
-            verifier.verify()
-        except:
-            raise Asn1Error('1: Validation of cert signature failed.')
+        new_api = hasattr(public_key, "verify")
+        if not new_api:
+            verifier = public_key.verifier(signature, padding.PKCS1v15(), cert_signed.signature_hash_algorithm)
+            try:
+                verifier.update(data)
+                verifier.verify()
+            except:
+                raise Asn1Error('1: Validation of cert signature failed.')
+        else:
+            try:
+                verifier = public_key.verify(signature, data, padding.PKCS1v15(), cert_signed.signature_hash_algorithm)
+                # verifier.update(data)
+                # verifier.verify()
+            except:
+                raise Asn1Error('1: Validation of cert signature failed.')
 
     def _validpubKeyopenssl(self, signing_cert, digest_alg, payload,
                             enc_digest):

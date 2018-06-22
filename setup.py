@@ -17,7 +17,7 @@ scripts = ["bin/fingerprint.py", "bin/print_pe_certs.py"]
 # +----------------------------------------------------------------------------
 # | Definition of the dependencies
 # +----------------------------------------------------------------------------
-dependencies = ['pyasn1', 'pyopenssl']
+dependencies = ['pyasn1>0.4', 'pyopenssl']
 
 extra_dependencies = {}
 
