@@ -145,7 +145,7 @@ class AuthData(object):
         self.encrypted_digest = binascii.b2a_hex(self.signer_info['encryptedDigest']._value).decode()
 
         unauth_attrs = self.signer_info['unauthenticatedAttributes']
-        if unauth_attrs is None:
+        if unauth_attrs is None or len(unauth_attrs) == 0:
             self.has_countersignature = False
             return
 
@@ -250,15 +250,16 @@ class AuthData(object):
     @staticmethod
     def _parsecountersig(unauth_attrs):
         attr = unauth_attrs[0]
-        if oids.OID_TO_CLASS.get(attr['type']) is not pkcs7.CountersignInfo:
-            raise Asn1Error('Unexpected countersign OID.')
-        values = attr['values']
-        if len(values) != 1:
-            raise Asn1Error('Expected one CS value, got %d.' % len(values))
-        counter_sig_info, rest = decoder.decode(values[0],
-                                                asn1Spec=pkcs7.CountersignInfo())
-        if rest: raise Asn1Error('Extra unparsed content.')
-        return counter_sig_info
+        if attr.isValue:
+            if oids.OID_TO_CLASS.get(attr['type']) is not pkcs7.CountersignInfo:
+                raise Asn1Error('Unexpected countersign OID.')
+            values = attr['values']
+            if len(values) != 1:
+                raise Asn1Error('Expected one CS value, got %d.' % len(values))
+            counter_sig_info, rest = decoder.decode(values[0],
+                                                    asn1Spec=pkcs7.CountersignInfo())
+            if rest: raise Asn1Error('Extra unparsed content.')
+            return counter_sig_info
 
     @staticmethod
     def _parseauthattrs(auth_attrs, required):
